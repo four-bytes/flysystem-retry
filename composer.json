@@ -2,7 +2,7 @@
     "name": "four-bytes/flysystem-retry",
     "description": "Flysystem v3 retry decorator for any FilesystemAdapter",
     "type": "library",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "authors": [
         {
             "name": "Four Bytes",
