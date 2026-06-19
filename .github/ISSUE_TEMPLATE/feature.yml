@@ -1,0 +1,17 @@
+name: Feature request
+description: Suggest an enhancement or new capability
+title: "[FEAT]: "
+body:
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Not already requested
+      options:
+        - label: I have checked that this hasn't been requested before
+          required: true
+  - type: textarea
+    attributes:
+      label: What do you want?
+      description: Describe the feature and why it would be useful
+    validations:
+      required: true
