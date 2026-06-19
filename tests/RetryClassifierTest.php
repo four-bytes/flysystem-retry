@@ -9,26 +9,12 @@ use PHPUnit\Framework\TestCase;
 
 final class RetryClassifierTest extends TestCase
 {
-    public function testDefaultClassifierRetiesRuntimeException(): void
+    public function testDefaultClassifierRetiesNothing(): void
     {
         $classifier = new RetryClassifier();
 
-        $this->assertTrue($classifier->isRetryable(new \RuntimeException('transient')));
-    }
-
-    public function testDefaultClassifierDoesNotRetryLogicException(): void
-    {
-        $classifier = new RetryClassifier();
-
-        $this->assertFalse($classifier->isRetryable(new \LogicException('programming error')));
-    }
-
-    public function testDefaultClassifierRetiesRuntimeExceptionSubclass(): void
-    {
-        $classifier = new RetryClassifier();
-        $e = new class extends \RuntimeException {};
-
-        $this->assertTrue($classifier->isRetryable($e));
+        $this->assertFalse($classifier->isRetryable(new \RuntimeException('transient')));
+        $this->assertFalse($classifier->isRetryable(new \LogicException('error')));
     }
 
     public function testCustomTransientClassIsRetryable(): void
