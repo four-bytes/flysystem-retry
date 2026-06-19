@@ -68,7 +68,7 @@ final class RetryAdapterTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('always fails');
 
-        self::adapter($inner, maxAttempts: 2)->write('a.txt', 'hi', new Config());
+        self::runtimeAdapter($inner, maxAttempts: 2)->write('a.txt', 'hi', new Config());
     }
 
     public function testNonRetryableExceptionPropagatesImmediately(): void
@@ -174,7 +174,7 @@ final class RetryAdapterTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
 
-        self::adapter($inner, maxAttempts: 1)->write('a.txt', '', new Config());
+        self::runtimeAdapter($inner, maxAttempts: 1)->write('a.txt', '', new Config());
 
         $this->assertSame(1, $calls);
     }

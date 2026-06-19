@@ -20,7 +20,7 @@ src/
 
 ## Key Design Decisions
 
-- `RetryClassifier` takes a list of exception class names; any exception that is an `instanceof` one of those classes is retryable. Defaults to `[\RuntimeException::class]`.
+- `RetryClassifier` takes a list of exception class names; any exception that is an `instanceof` one of those classes is retryable. Defaults to `[]` (opt-in — nothing is retried unless explicitly configured).
 - `RetryPolicy::delayFor(int $attempt)` returns milliseconds with jitter applied. Attempt 1 = `baseDelayMs`, attempt 2 = `baseDelayMs * multiplier`, etc., capped at `maxDelayMs`.
 - `usleep()` is called with `delayMs * 1000`. Pass `baseDelayMs: 0` in tests to avoid real delays.
 - The retry loop logs a `warning` on each retry and an `error` on final exhaustion via `LoggerInterface` (defaults to `NullLogger`).
