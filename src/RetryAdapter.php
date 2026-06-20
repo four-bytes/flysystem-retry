@@ -71,7 +71,16 @@ final class RetryAdapter implements FilesystemAdapter
         // Non-seekable streams (pipes, sockets) have seekable=false in metadata — ftell() alone is not
         // a reliable probe because popen()/stream_socket_pair() return int(0) rather than false.
         $seekable = is_resource($contents) && stream_get_meta_data($contents)['seekable'];
-        $startPos = $seekable ? ftell($contents) : false;
+        $startPos = false;
+        if ($seekable) {
+            $startPos = ftell($contents);
+            if ($startPos === false) {
+                $this->logger->warning('Flysystem writeStream: seekable stream ftell() failed, retries will not rewind', [
+                    'operation' => 'writeStream',
+                    'path' => $path,
+                ]);
+            }
+        }
 
         $this->retry('writeStream', $path, function () use ($path, $contents, $config, $startPos): void {
             if ($startPos !== false) {

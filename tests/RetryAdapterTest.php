@@ -225,4 +225,29 @@ final class RetryAdapterTest extends TestCase
 
         pclose($stream);
     }
+
+    public function testWriteStreamRetriesNonSeekableStreamWithoutSeekError(): void
+    {
+        $stream = popen('true', 'r');
+        if ($stream === false) {
+            self::markTestSkipped('popen not available');
+        }
+
+        $attempt = 0;
+        $inner = $this->createMock(FilesystemAdapter::class);
+        $inner->method('writeStream')->willReturnCallback(
+            function () use (&$attempt): void {
+                $attempt++;
+                if ($attempt === 1) {
+                    throw new \RuntimeException('transient');
+                }
+                // Second attempt must succeed without fseek error
+            }
+        );
+
+        self::runtimeAdapter($inner, maxAttempts: 2)->writeStream('f.txt', $stream, new Config());
+
+        pclose($stream);
+        $this->assertSame(2, $attempt);
+    }
 }
