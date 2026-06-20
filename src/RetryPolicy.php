@@ -17,7 +17,7 @@ final readonly class RetryPolicy
     public function delayFor(int $attempt): int
     {
         $delay = (int) min($this->baseDelayMs * ($this->multiplier ** ($attempt - 1)), $this->maxDelayMs);
-        $jitter = (int) ($delay * $this->jitterFactor * ((new \Random\Randomizer())->getFloat(0.0, 1.0) * 2 - 1));
+        $jitter = (int) ($delay * $this->jitterFactor * ((new \Random\Randomizer())->nextFloat() * 2 - 1));
 
         return max(0, $delay + $jitter);
     }
