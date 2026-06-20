@@ -38,20 +38,19 @@ $policy = new RetryPolicy(
 
 ### Custom exception classification
 
-By default only `\RuntimeException` and subclasses are retried. Pass a custom `RetryClassifier` to control which exceptions trigger a retry:
+By default **nothing is retried** — the retryable exception list is empty. Pass a `RetryClassifier` to opt in to specific exception classes:
 
 ```php
 use Your\Package\TransientStorageException;
 
 $classifier = new RetryClassifier([
     TransientStorageException::class,
-    \RuntimeException::class,
 ]);
 
 $adapter = new RetryAdapter($yourAdapter, $policy, $classifier);
 ```
 
-Permanent errors (e.g. 401, 403, 404) should never be in the retryable list.
+This opt-in design prevents accidentally retrying Flysystem's own permanent exceptions (`UnableToReadFile`, `UnableToWriteFile`, etc.), which also extend `\RuntimeException`. Permanent errors (401, 403, 404) should never be in the retryable list.
 
 ### With logging
 

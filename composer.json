@@ -29,6 +29,13 @@
             "Four\\Flysystem\\Retry\\Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "test": [
+            "vendor/bin/phpunit",
+            "vendor/bin/phpstan analyse src tests --level=8"
+        ],
+        "phpstan": "vendor/bin/phpstan analyse src tests --level=8"
+    },
     "config": {
         "sort-packages": true
     }

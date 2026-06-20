@@ -14,9 +14,7 @@ final class RetryClassifier
     /** @param array<class-string<\Throwable>> $transientClasses */
     public function __construct(array $transientClasses = [])
     {
-        $this->transientClasses = $transientClasses ?: [
-            \RuntimeException::class,
-        ];
+        $this->transientClasses = $transientClasses;
     }
 
     public function isRetryable(\Throwable $e): bool

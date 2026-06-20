@@ -19,9 +19,21 @@ final class RetryAdapterTest extends TestCase
         return new RetryPolicy(maxAttempts: $maxAttempts, baseDelayMs: 0);
     }
 
-    private static function adapter(FilesystemAdapter $inner, int $maxAttempts = 3): RetryAdapter
+    private static function adapter(
+        FilesystemAdapter $inner,
+        int $maxAttempts = 3,
+        ?RetryClassifier $classifier = null,
+    ): RetryAdapter {
+        return new RetryAdapter($inner, self::noDelayPolicy($maxAttempts), $classifier ?? new RetryClassifier());
+    }
+
+    private static function runtimeAdapter(FilesystemAdapter $inner, int $maxAttempts = 3): RetryAdapter
     {
-        return new RetryAdapter($inner, self::noDelayPolicy($maxAttempts));
+        return new RetryAdapter(
+            $inner,
+            self::noDelayPolicy($maxAttempts),
+            new RetryClassifier([\RuntimeException::class]),
+        );
     }
 
     public function testSuccessOnFirstTryPassesThrough(): void
@@ -43,7 +55,7 @@ final class RetryAdapterTest extends TestCase
             }
         });
 
-        self::adapter($inner)->write('a.txt', 'hi', new Config());
+        self::runtimeAdapter($inner)->write('a.txt', 'hi', new Config());
 
         $this->assertSame(3, $calls);
     }
@@ -56,7 +68,7 @@ final class RetryAdapterTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('always fails');
 
-        self::adapter($inner, maxAttempts: 2)->write('a.txt', 'hi', new Config());
+        self::runtimeAdapter($inner, maxAttempts: 2)->write('a.txt', 'hi', new Config());
     }
 
     public function testNonRetryableExceptionPropagatesImmediately(): void
@@ -93,7 +105,7 @@ final class RetryAdapterTest extends TestCase
             return 'content';
         });
 
-        $result = self::adapter($inner)->read('a.txt');
+        $result = self::runtimeAdapter($inner)->read('a.txt');
 
         $this->assertSame('content', $result);
         $this->assertSame(2, $calls);
@@ -111,7 +123,7 @@ final class RetryAdapterTest extends TestCase
             return true;
         });
 
-        $this->assertTrue(self::adapter($inner)->fileExists('a.txt'));
+        $this->assertTrue(self::runtimeAdapter($inner)->fileExists('a.txt'));
     }
 
     public function testDeleteRetriesOnTransientFailure(): void
@@ -125,7 +137,7 @@ final class RetryAdapterTest extends TestCase
             }
         });
 
-        self::adapter($inner)->delete('a.txt');
+        self::runtimeAdapter($inner)->delete('a.txt');
 
         $this->assertSame(2, $calls);
     }
@@ -162,7 +174,7 @@ final class RetryAdapterTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
 
-        self::adapter($inner, maxAttempts: 1)->write('a.txt', '', new Config());
+        self::runtimeAdapter($inner, maxAttempts: 1)->write('a.txt', '', new Config());
 
         $this->assertSame(1, $calls);
     }
