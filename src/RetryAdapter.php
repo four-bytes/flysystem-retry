@@ -67,7 +67,18 @@ final class RetryAdapter implements FilesystemAdapter
 
     public function writeStream(string $path, $contents, Config $config): void
     {
-        $this->retry('writeStream', $path, fn () => $this->inner->writeStream($path, $contents, $config));
+        // Capture the stream position before the first attempt so each retry starts from the same offset.
+        // Non-seekable streams (pipes, sockets) have seekable=false in metadata — ftell() alone is not
+        // a reliable probe because popen()/stream_socket_pair() return int(0) rather than false.
+        $seekable = is_resource($contents) && stream_get_meta_data($contents)['seekable'];
+        $startPos = $seekable ? ftell($contents) : false;
+
+        $this->retry('writeStream', $path, function () use ($path, $contents, $config, $startPos): void {
+            if ($startPos !== false) {
+                fseek($contents, $startPos);
+            }
+            $this->inner->writeStream($path, $contents, $config);
+        });
     }
 
     public function read(string $path): string
@@ -122,6 +133,7 @@ final class RetryAdapter implements FilesystemAdapter
 
     public function listContents(string $path, bool $deep): iterable
     {
+        // Retry covers generator creation only — failures during iteration are not retried.
         return $this->retry('listContents', $path, fn () => $this->inner->listContents($path, $deep));
     }
 

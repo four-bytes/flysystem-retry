@@ -178,4 +178,51 @@ final class RetryAdapterTest extends TestCase
 
         $this->assertSame(1, $calls);
     }
+
+    public function testWriteStreamRewoundsSeekableStreamBeforeEachRetry(): void
+    {
+        $stream = fopen('php://memory', 'r+');
+        if ($stream === false) {
+            self::fail('Could not open memory stream');
+        }
+        fwrite($stream, 'hello');
+        rewind($stream);
+
+        $attempt = 0;
+        $inner = $this->createMock(FilesystemAdapter::class);
+        $inner->method('writeStream')->willReturnCallback(
+            function (string $path, mixed $contents) use (&$attempt): void {
+                $attempt++;
+                $read = stream_get_contents($contents); // consume the stream
+                if ($attempt === 1) {
+                    throw new \RuntimeException('transient');
+                }
+                // On retry the adapter must have rewound: full content is available again
+                $this->assertSame('hello', $read);
+            }
+        );
+
+        self::runtimeAdapter($inner, maxAttempts: 2)->writeStream('f.txt', $stream, new Config());
+
+        fclose($stream);
+        $this->assertSame(2, $attempt);
+    }
+
+    public function testWriteStreamDoesNotFailOnNonSeekableStream(): void
+    {
+        // popen() returns int(0) from ftell() — not false — so it exercises the path where a naive
+        // ftell()-based probe would incorrectly classify the stream as seekable. stream_get_meta_data()
+        // correctly reports seekable=false, preventing the fseek() call.
+        $stream = popen('true', 'r');
+        if ($stream === false) {
+            self::markTestSkipped('popen not available');
+        }
+
+        $inner = $this->createMock(FilesystemAdapter::class);
+        $inner->expects($this->once())->method('writeStream');
+
+        self::runtimeAdapter($inner)->writeStream('f.txt', $stream, new Config());
+
+        pclose($stream);
+    }
 }
