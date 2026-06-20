@@ -30,7 +30,10 @@
         }
     },
     "scripts": {
-        "test": "vendor/bin/phpunit",
+        "test": [
+            "vendor/bin/phpunit",
+            "vendor/bin/phpstan analyse src tests --level=8"
+        ],
         "phpstan": "vendor/bin/phpstan analyse src tests --level=8"
     },
     "config": {
