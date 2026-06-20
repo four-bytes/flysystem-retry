@@ -233,21 +233,126 @@ final class RetryAdapterTest extends TestCase
             self::markTestSkipped('popen not available');
         }
 
-        $attempt = 0;
-        $inner = $this->createMock(FilesystemAdapter::class);
-        $inner->method('writeStream')->willReturnCallback(
-            function () use (&$attempt): void {
-                $attempt++;
-                if ($attempt === 1) {
-                    throw new \RuntimeException('transient');
-                }
-                // Second attempt must succeed without fseek error
-            }
-        );
-
+        $inner = new FailingAdapter(failTimes: 1);
         self::runtimeAdapter($inner, maxAttempts: 2)->writeStream('f.txt', $stream, new Config());
 
         pclose($stream);
-        $this->assertSame(2, $attempt);
+        $this->assertSame(2, $inner->calls());
+    }
+}
+
+final class FailingAdapter implements FilesystemAdapter
+{
+    private int $calls = 0;
+
+    public function __construct(private readonly int $failTimes = 1) {}
+
+    public function calls(): int
+    {
+        return $this->calls;
+    }
+
+    public function write(string $path, string $contents, Config $config): void
+    {
+        $this->attempt();
+    }
+
+    public function writeStream(string $path, $contents, Config $config): void
+    {
+        $this->attempt();
+    }
+
+    public function read(string $path): string
+    {
+        $this->attempt();
+        return '';
+    }
+
+    public function readStream(string $path)
+    {
+        $this->attempt();
+        $stream = fopen('php://memory', 'r');
+        assert($stream !== false);
+        return $stream;
+    }
+
+    public function fileExists(string $path): bool
+    {
+        $this->attempt();
+        return false;
+    }
+
+    public function directoryExists(string $path): bool
+    {
+        $this->attempt();
+        return false;
+    }
+
+    public function delete(string $path): void
+    {
+        $this->attempt();
+    }
+
+    public function deleteDirectory(string $path): void
+    {
+        $this->attempt();
+    }
+
+    public function createDirectory(string $path, Config $config): void
+    {
+        $this->attempt();
+    }
+
+    public function setVisibility(string $path, string $visibility): void
+    {
+        $this->attempt();
+    }
+
+    public function visibility(string $path): FileAttributes
+    {
+        $this->attempt();
+        return new FileAttributes($path);
+    }
+
+    public function mimeType(string $path): FileAttributes
+    {
+        $this->attempt();
+        return new FileAttributes($path);
+    }
+
+    public function lastModified(string $path): FileAttributes
+    {
+        $this->attempt();
+        return new FileAttributes($path);
+    }
+
+    public function fileSize(string $path): FileAttributes
+    {
+        $this->attempt();
+        return new FileAttributes($path);
+    }
+
+    public function listContents(string $path, bool $deep): iterable
+    {
+        $this->attempt();
+        return [];
+    }
+
+    public function move(string $source, string $destination, Config $config): void
+    {
+        $this->attempt();
+    }
+
+    public function copy(string $source, string $destination, Config $config): void
+    {
+        $this->attempt();
+    }
+
+    private function attempt(): void
+    {
+        $this->calls++;
+        if ($this->calls <= $this->failTimes) {
+            throw new \RuntimeException('transient');
+        }
     }
 }
