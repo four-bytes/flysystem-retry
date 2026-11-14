@@ -1,6 +1,14 @@
 {
     "name": "four-bytes/flysystem-retry",
-    "description": "Flysystem v3 retry decorator for any FilesystemAdapter",
+    "description": "Flysystem v3 retry decorator for any filesystem adapter — exponential backoff with jitter",
+    "keywords": [
+        "flysystem",
+        "retry",
+        "backoff",
+        "filesystem",
+        "decorator",
+        "php"
+    ],
     "type": "library",
     "license": "Apache-2.0",
     "authors": [
