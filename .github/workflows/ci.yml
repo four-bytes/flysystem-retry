@@ -3,8 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - composer.json
+      - composer.lock
   pull_request:
     branches: [main]
+    paths:
+      - composer.json
+      - composer.lock
 
 permissions:
   contents: read
